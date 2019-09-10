@@ -9,20 +9,24 @@
 #define LISTENQ 10
 #define MAXDATASIZE 100
 
-void handleClientConnectionOnChildProcess(int connfd, int i);
+// wrapper functions (TODO: RENAME PARAMETER NAMES)
+int Socket(int family, int type, int flags);
+
+void Bind(int i, const struct sockaddr_in *a, socklen_t t);
+
+void Listen(int i, int j);
+
+void handleClientConnectionOnChildProcess(int connfd, int listenfd);
 
 void handleClientConnection(int connfd);
 
+int createListenfd();
+
 int main(int argc, char **argv) {
-    int listenfd, connfd;
+    int connfd;
     struct sockaddr_in servaddr;
 
-    // cria um socket para escutar conexões que chegarão a partir
-    // de clientes. Caso haja um erro ao criar o socket, o servidor é finalizado.
-    if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("socket");
-        exit(1);
-    }
+    int listenfd = createListenfd();
 
     // Escreve zeros na região de memória de servaddr
     // de forma a "limpar" esta variável antes de utilizá-la.
@@ -32,29 +36,18 @@ int main(int argc, char **argv) {
     servaddr.sin_port = htons(13182);                   // configura a porta na qual o servidor rodará
 
     // conecta o socket ao endereço configurado
-    if (bind(listenfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1) {
-        perror("bind");
-        exit(1);
-    }
+    Bind(listenfd, &servaddr, sizeof(servaddr));
 
     // permite que o processo escute no socked previamente configurados por conexões que podem chegar
     // LISTENQ configura o número de conexões que podem ficar esperando enquanto o processo
     // trata uma conexão particular
-    if (listen(listenfd, LISTENQ) == -1) {
-        perror("listen");
-        exit(1);
-    }
+    Listen(listenfd, LISTENQ);
 
     // o servidor fica em um loop permanente, aguardando conexões que podem chegar
     // e tratando-as, respondendo-as da forma apropriada
     for (;;) {
-        // fica esperando por conexões que podem chegar de clientes.
-        // enquanto isto,  o processo fica bloqueado, sendo "acordado" novamente
-        // quando uma conexão com um cliente for estabelecida
-        if ((connfd = accept(listenfd, (struct sockaddr *) NULL, NULL)) == -1) {
-            perror("accept");
-            exit(1);
-        }
+        // wait for client connection
+        connfd = Accept(listenfd, (struct sockaddr *) NULL, NULL);
 
         if (fork() == 0) {
             handleClientConnectionOnChildProcess(connfd, listenfd);
@@ -64,6 +57,8 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+int createListenfd() { return Socket(AF_INET, SOCK_STREAM, 0); }
 
 void handleClientConnectionOnChildProcess(int connfd, int listenfd) {
     close(listenfd);
@@ -96,4 +91,41 @@ void handleClientConnection(int connfd) {
 
     // imprime na saída padrão a porta do cliente conectado
     printf("Client Port: %d\n", (int) ntohs(peer.sin_port));
+}
+
+// wrapper functions
+// cria um socket para escutar conexões que chegarão a partir
+// de clientes. Caso haja um erro ao criar o socket, o servidor é finalizado.
+int Socket(int family, int type, int flags) {
+    int sockfd;
+    if ((sockfd = socket(family, type, flags)) < 0) {
+        perror("socket");
+        exit(1);
+    }
+
+    return sockfd;
+}
+
+void Bind(int i, const struct sockaddr_in *a, socklen_t t) {
+    if (bind(i, (struct sockaddr *) a, t) == -1) {
+        perror("bind");
+        exit(1);
+    }
+}
+
+void Listen(int i, int j) {
+    if (listen(i, j) == -1) {
+        perror("listen");
+        exit(1);
+    }
+}
+
+int	Accept(int i, struct sockaddr * __restrict j, socklen_t * __restrict k) {
+    int connfd;
+    if ((connfd = accept(i, j, k)) == -1) {
+        perror("accept");
+        exit(1);
+    }
+
+    return connfd;
 }
