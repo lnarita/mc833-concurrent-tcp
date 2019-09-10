@@ -9,12 +9,26 @@
 #define LISTENQ 10
 #define MAXDATASIZE 100
 
+// TODO: REMOVE PRAGMA DIRECTIVES FROM MAIN
+
+void initializeServAddr(struct sockaddr_in *servaddr);
+
 // wrapper functions (TODO: RENAME PARAMETER NAMES)
 int Socket(int family, int type, int flags);
+
+void initializeServAddr(struct sockaddr_in *servaddr) {// Escreve zeros na região de memória de servaddr
+    // de forma a "limpar" esta variável antes de utilizá-la.
+    bzero(servaddr, sizeof((*servaddr)));
+    (*servaddr).sin_family = AF_INET;
+    (*servaddr).sin_addr.s_addr = htonl(INADDR_ANY);       // configura o IP do servidor (IP da máquina local)
+    (*servaddr).sin_port = htons(13182);                   // configura a porta na qual o servidor rodará
+}
 
 void Bind(int i, const struct sockaddr_in *a, socklen_t t);
 
 void Listen(int i, int j);
+
+int Accept(int i, struct sockaddr *__restrict j, socklen_t *__restrict k);
 
 void handleClientConnectionOnChildProcess(int connfd, int listenfd);
 
@@ -22,18 +36,16 @@ void handleClientConnection(int connfd);
 
 int createListenfd();
 
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+
 int main(int argc, char **argv) {
     int connfd;
     struct sockaddr_in servaddr;
 
     int listenfd = createListenfd();
-
-    // Escreve zeros na região de memória de servaddr
-    // de forma a "limpar" esta variável antes de utilizá-la.
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);       // configura o IP do servidor (IP da máquina local)
-    servaddr.sin_port = htons(13182);                   // configura a porta na qual o servidor rodará
+    initializeServAddr(&servaddr);
 
     // conecta o socket ao endereço configurado
     Bind(listenfd, &servaddr, sizeof(servaddr));
@@ -57,6 +69,8 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+#pragma clang diagnostic pop
 
 int createListenfd() { return Socket(AF_INET, SOCK_STREAM, 0); }
 
@@ -120,7 +134,7 @@ void Listen(int i, int j) {
     }
 }
 
-int	Accept(int i, struct sockaddr * __restrict j, socklen_t * __restrict k) {
+int Accept(int i, struct sockaddr *__restrict j, socklen_t *__restrict k) {
     int connfd;
     if ((connfd = accept(i, j, k)) == -1) {
         perror("accept");
