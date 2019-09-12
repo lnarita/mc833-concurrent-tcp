@@ -96,7 +96,7 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd) {
 void handleClientConnection(int connfd) {
     char recvline[MAXLINE + 1];
     readCommandFromClient(connfd, recvline);
-    sendMessageToClient(connfd, recvline);          // TODO IMPLEMENT FUNCTION
+    sendMessageToClient(connfd, recvline);
     executeCommandFromClient(recvline);
 
     struct sockaddr_in peer;
@@ -113,7 +113,8 @@ void executeCommandFromClient(const char *command) {
 }
 
 void sendMessageToClient(int connfd, char *message) {
-    // TODO IMPLEMENT SEND MESSAGE OPERATION
+    printf("Sending message to client: %s\n", message);
+    write(connfd, message, strlen(message));
 }
 
 void readCommandFromClient(int connfd, char *recvline) {
@@ -121,12 +122,8 @@ void readCommandFromClient(int connfd, char *recvline) {
 
     while ((n = read(connfd, recvline, MAXLINE)) > 0) {
         recvline[n] = 0;
-
-//        if (fputs(recvline, stdout) == EOF) {
-//            perror("fputs error");
-//            exit(1);                // TODO REFACTOR
-//        }
     }
+    printf("Read from client: %s\n", recvline);
 }
 
 // wrapper functions

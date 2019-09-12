@@ -5,4 +5,5 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_executable(mc833_concurrent_tcp
         server.c
-        cliente.c)
+        cliente.c
+        client.c)
