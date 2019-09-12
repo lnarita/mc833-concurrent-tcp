@@ -9,6 +9,8 @@
 #define LISTENQ 10
 #define MAXDATASIZE 100
 
+#define MAXLINE 4096
+
 // TODO: REMOVE PRAGMA DIRECTIVES FROM MAIN
 
 void initializeServAddr(struct sockaddr_in *servaddr);
@@ -36,6 +38,12 @@ void handleClientConnection(int connfd);
 
 int createListenfd();
 
+
+void readCommandFromClient(int connfd, char *recvline);
+
+void sendMessageToClient(int connfd, char *message);
+
+void executeCommandFromClient(const char *command);
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -86,17 +94,10 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd) {
 }
 
 void handleClientConnection(int connfd) {
-    char buf[MAXDATASIZE];
-    // obtém um timer
-    time_t ticks = time(NULL);
-
-    // escreve em um buffer a data e hora atual, utilizando o timer fornecido
-    snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
-
-    // utilizando o buffer previamente preenchido, escreve no file descriptor
-    // do socket "conectado" a data e a hora, fazendo assim com que
-    // a data e a hora sejam enviadas para o cliente conectado
-    write(connfd, buf, strlen(buf));
+    char recvline[MAXLINE + 1];
+    readCommandFromClient(connfd, recvline);
+    sendMessageToClient(connfd, recvline);          // TODO IMPLEMENT FUNCTION
+    executeCommandFromClient(recvline);
 
     struct sockaddr_in peer;
 
@@ -105,6 +106,27 @@ void handleClientConnection(int connfd) {
 
     // imprime na saída padrão a porta do cliente conectado
     printf("Client Port: %d\n", (int) ntohs(peer.sin_port));
+}
+
+void executeCommandFromClient(const char *command) {
+    system(command);
+}
+
+void sendMessageToClient(int connfd, char *message) {
+    // TODO IMPLEMENT SEND MESSAGE OPERATION
+}
+
+void readCommandFromClient(int connfd, char *recvline) {
+    ssize_t n;
+
+    while ((n = read(connfd, recvline, MAXLINE)) > 0) {
+        recvline[n] = 0;
+
+//        if (fputs(recvline, stdout) == EOF) {
+//            perror("fputs error");
+//            exit(1);                // TODO REFACTOR
+//        }
+    }
 }
 
 // wrapper functions
