@@ -119,9 +119,15 @@ void sendMessageToClient(int connfd, char *message) {
 
 void readCommandFromClient(int connfd, char *recvline) {
     ssize_t n;
+    printf("start readCommandFromClient\n");
 
     while ((n = read(connfd, recvline, MAXLINE)) > 0) {
         recvline[n] = 0;
+        // imprime o "chunk" recebido na saída padrão
+        if (fputs(recvline, stdout) == EOF) {
+            perror("fputs error");
+            exit(1);
+        }
     }
     printf("Read from client: %s\n", recvline);
 }
