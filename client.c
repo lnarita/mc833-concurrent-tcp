@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
         }
 
         sendCommandToServer(sockfd, &servaddr, commandFromKeyboard);
-        printf("Command sent \n");
+
         char stringFromServer[MAXLINE];
         handleServerInput(sockfd, stringFromServer);
         printStringFromServer(stringFromServer);

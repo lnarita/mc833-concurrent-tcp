@@ -110,14 +110,10 @@ void handleClientConnection(int connfd) {
 }
 
 void executeCommandFromClient(const char *command) {
-    printf("Executing command: %s", command);
-    printf("After print execute\n");
     system(command);
-    printf("Executed command: %s\n", command);
 }
 
 void sendMessageToClient(int connfd, char *message) {
-    printf("Sending message to client: %s\n", message);
     write(connfd, message, strlen(message));
 }
 
