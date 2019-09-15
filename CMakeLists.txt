@@ -4,4 +4,5 @@ project(mc833_concurrent_tcp)
 set(CMAKE_CXX_STANDARD 11)
 
 add_executable(mc833_concurrent_tcp
-        server.c)
+        server.c
+        client.c)

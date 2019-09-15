@@ -17,14 +17,12 @@ void printStringFromServer(char *stringFromServer);
 
 void assertArgumentCount(int argc, char **argv);
 
+int connectWithServer(struct sockaddr_in *pIn, char *serverAddress, char *serverPort);
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
 
 int main(int argc, char **argv) {
-    // socket file descriptor
-    int sockfd;
-    // endereço de conexão do socket
-    struct sockaddr_in servaddr;
 
     // verifica a quantidade de argumentos do programa
     assertArgumentCount(argc, argv);
@@ -32,34 +30,14 @@ int main(int argc, char **argv) {
     printf("Connecting to server: %s on port %s\n", argv[1], argv[2]);
 
     for (;;) {
-        // cria um socket para estabeler uma conexão com o servidor
-        // em caso de qualquer erro, o cliente será encerrado
-        if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-            perror("socket error");
-            exit(1);
-        }
-
-        // limpa a variável 'servaddr' antes da sua utilização,
-        // escrevendo zeros na região de memória da mesma
-        bzero(&servaddr, sizeof(servaddr));
-        // usando ipv4
-        servaddr.sin_family = AF_INET;
-        // configura a porta do servidor como sendo 13182
-        servaddr.sin_port = htons(atoi(argv[2]));
-        // formata / converte o endereço do servidor de string para binário
-        // e atribui este valor para o campo sin_addr da variáveo servaddr
-
-        if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0) {
-            perror("inet_pton error");
-            exit(1);
-        }
-
-        if (connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
-            perror("connect error");
-            exit(1);
-        }
         char commandFromKeyboard[MAXLINE];
         readCommandFromInput(commandFromKeyboard);
+
+        // endereço de conexão do socket
+        struct sockaddr_in servaddr;
+
+        // socket file descriptor
+        int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
 
         sendCommandToServer(sockfd, &servaddr, commandFromKeyboard);
         printf("Command sent: %s\n", commandFromKeyboard);
@@ -70,7 +48,40 @@ int main(int argc, char **argv) {
         close(sockfd);
     }
 
-    close(sockfd);
+//    close(sockfd);
+}
+
+int connectWithServer(struct sockaddr_in *servaddr, char *serverAddress, char *serverPort) {
+    int sockfd;
+    // cria um socket para estabeler uma conexão com o servidor
+    // em caso de qualquer erro, o cliente será encerrado
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket error");
+        exit(1);
+    }
+
+
+    // limpa a variável 'servaddr' antes da sua utilização,
+    // escrevendo zeros na região de memória da mesma
+    bzero(servaddr, sizeof(*servaddr));
+    // usando ipv4
+    (*servaddr).sin_family = AF_INET;
+    // configura a porta do servidor como sendo 13182
+    (*servaddr).sin_port = htons(atoi(serverPort));
+    // formata / converte o endereço do servidor de string para binário
+    // e atribui este valor para o campo sin_addr da variáveo servaddr
+
+    if (inet_pton(AF_INET, serverAddress, &((*servaddr).sin_addr)) <= 0) {
+        perror("inet_pton error");
+        exit(1);
+    }
+
+    if (connect(sockfd, (struct sockaddr *) servaddr, sizeof(*servaddr)) < 0) {
+        perror("connect error");
+        exit(1);
+    }
+
+    return sockfd;
 }
 
 void assertArgumentCount(int argc, char **argv) {

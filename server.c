@@ -47,7 +47,7 @@ void executeCommandFromClient(const char *command);
 
 void assertArgumentCount(int argc, char **argv);
 
-void printClientInfo(struct sockaddr_in *clientInfo);
+void printConnectedClientInfo(struct sockaddr_in *clientInfo);
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -118,21 +118,13 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct socka
 
 void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
     char recvline[MAXLINE + 1];
-    printClientInfo(&clientInfo);
+    printConnectedClientInfo(&clientInfo);
     readCommandFromClient(connfd, recvline);
     sendMessageToClient(connfd, recvline);
     executeCommandFromClient(recvline);
-
-    struct sockaddr_in peer;
-
-    // imprime na saída padrão o IP do cliente conectado
-    printf("Client IP Address: %s\n", inet_ntoa(peer.sin_addr));
-
-    // imprime na saída padrão a porta do cliente conectado
-    printf("Client Port: %d\n", (int) ntohs(peer.sin_port));
 }
 
-void printClientInfo(struct sockaddr_in *clientInfo) {
+void printConnectedClientInfo(struct sockaddr_in *clientInfo) {
     printf("Client %s connected from his %d port\n", inet_ntoa((*clientInfo).sin_addr), (int) ntohs((*clientInfo).sin_port));
 }
 
