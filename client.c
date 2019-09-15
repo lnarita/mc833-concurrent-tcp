@@ -30,42 +30,46 @@ int main(int argc, char **argv) {
     assertArgumentCount(argc, argv);
 
 
-    // cria um socket para estabeler uma conexão com o servidor
-    // em caso de qualquer erro, o cliente será encerrado
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket error");
-        exit(1);
-    }
-
-    // limpa a variável 'servaddr' antes da sua utilização,
-    // escrevendo zeros na região de memória da mesma
-    bzero(&servaddr, sizeof(servaddr));
-    // usando ipv4
-    servaddr.sin_family = AF_INET;
-    // configura a porta do servidor como sendo 13182
-    servaddr.sin_port = htons(atoi(argv[2]));
-    // formata / converte o endereço do servidor de string para binário
-    // e atribui este valor para o campo sin_addr da variáveo servaddr
-
-    if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0) {
-        perror("inet_pton error");
-        exit(1);
-    }
-
     for (;;) {
-        char commandFromKeyboard[MAXLINE];
-        readCommandFromInput(commandFromKeyboard);
+        // cria um socket para estabeler uma conexão com o servidor
+        // em caso de qualquer erro, o cliente será encerrado
+        if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+            perror("socket error");
+            exit(1);
+        }
+
+        // limpa a variável 'servaddr' antes da sua utilização,
+        // escrevendo zeros na região de memória da mesma
+        bzero(&servaddr, sizeof(servaddr));
+        // usando ipv4
+        servaddr.sin_family = AF_INET;
+        // configura a porta do servidor como sendo 13182
+        servaddr.sin_port = htons(atoi(argv[2]));
+        // formata / converte o endereço do servidor de string para binário
+        // e atribui este valor para o campo sin_addr da variáveo servaddr
+
+        if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0) {
+            perror("inet_pton error");
+            exit(1);
+        }
+
         if (connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
             perror("connect error");
             exit(1);
         }
+        char commandFromKeyboard[MAXLINE];
+        readCommandFromInput(commandFromKeyboard);
 
         sendCommandToServer(sockfd, &servaddr, commandFromKeyboard);
+        printf("Command sent: %s\n", commandFromKeyboard);
 
         char stringFromServer[MAXLINE];
         handleServerInput(sockfd, stringFromServer);
         printStringFromServer(stringFromServer);
+        close(sockfd);
     }
+
+    close(sockfd);
 }
 
 void assertArgumentCount(int argc, char **argv) {
