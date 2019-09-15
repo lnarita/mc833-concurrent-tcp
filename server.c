@@ -10,21 +10,20 @@
 #define MAXDATASIZE 100
 
 #define MAXLINE 4096
-#define PORT 13182
 
 // TODO: REMOVE PRAGMA DIRECTIVES FROM MAIN
 
-void initializeServAddr(struct sockaddr_in *servaddr);
+void initializeServAddr(struct sockaddr_in *servaddr, int port);
 
 // wrapper functions (TODO: RENAME PARAMETER NAMES)
 int Socket(int family, int type, int flags);
 
-void initializeServAddr(struct sockaddr_in *servaddr) {// Escreve zeros na região de memória de servaddr
+void initializeServAddr(struct sockaddr_in *servaddr, int port) {// Escreve zeros na região de memória de servaddr
     // de forma a "limpar" esta variável antes de utilizá-la.
     bzero(servaddr, sizeof((*servaddr)));
     (*servaddr).sin_family = AF_INET;
     (*servaddr).sin_addr.s_addr = htonl(INADDR_ANY);       // configura o IP do servidor (IP da máquina local)
-    (*servaddr).sin_port = htons(13182);                   // configura a porta na qual o servidor rodará
+    (*servaddr).sin_port = htons(port);                   // configura a porta na qual o servidor rodará
 }
 
 void Bind(int i, const struct sockaddr_in *a, socklen_t t);
@@ -46,6 +45,8 @@ void sendMessageToClient(int connfd, char *message);
 
 void executeCommandFromClient(const char *command);
 
+void assertArgumentCount(int argc, char **argv);
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
 
@@ -53,8 +54,10 @@ int main(int argc, char **argv) {
     int connfd;
     struct sockaddr_in servaddr;
 
+    assertArgumentCount(argc, argv);
+
     int listenfd = createListenfd();
-    initializeServAddr(&servaddr);
+    initializeServAddr(&servaddr, atoi(argv[1]));
 
     // conecta o socket ao endereço configurado
     Bind(listenfd, &servaddr, sizeof(servaddr));
@@ -77,6 +80,21 @@ int main(int argc, char **argv) {
     }
 
     return 0;
+}
+
+void assertArgumentCount(int argc, char **argv) {
+    char error[MAXLINE + 1];
+    if (argc != 2) {
+        // se o endereço do servidor não foi fornecido
+        // exibe a forma correta de usar o programa na saída
+        // padrão de erro
+        strcpy(error, "uso: ");
+        strcat(error, argv[0]);
+        strcat(error, "<server port>");
+        perror(error);
+        // finaliza a execução com um código de erro
+        exit(1);
+    }
 }
 
 #pragma clang diagnostic pop
