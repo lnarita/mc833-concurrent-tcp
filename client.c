@@ -21,6 +21,10 @@ int connectWithServer(struct sockaddr_in *pIn, char *serverAddress, char *server
 
 void printConnectionInfo(int sockfd);
 
+void removeNewLineCharacterFromCommand(char *commandFromKeyboard);
+
+void printCommandSent(const char *commandFromKeyboard);
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
 
@@ -40,7 +44,7 @@ int main(int argc, char **argv) {
         int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
         printConnectionInfo(sockfd);
         sendCommandToServer(sockfd, &servaddr, commandFromKeyboard);
-        printf("Command sent: %s\n", commandFromKeyboard);
+        printCommandSent(commandFromKeyboard);
 
         char stringFromServer[MAXLINE];
         handleServerInput(sockfd, stringFromServer);
@@ -49,11 +53,16 @@ int main(int argc, char **argv) {
     }
 }
 
+void printCommandSent(const char *commandFromKeyboard) {
+    printf("Command sent to server: %s\n", commandFromKeyboard);
+}
+
 void printConnectionInfo(int sockfd) {
     struct sockaddr_in local_address;
     socklen_t addr_size = sizeof(local_address);
-    getsockname(sockfd, (struct sockaddr *)&local_address, &addr_size);
-    printf("Connection established using local ip %s and local port %d\n", inet_ntoa(local_address.sin_addr), (int) ntohs(local_address.sin_port));
+    getsockname(sockfd, (struct sockaddr *) &local_address, &addr_size);
+    printf("Connection established using local ip %s and local port %d\n", inet_ntoa(local_address.sin_addr),
+           (int) ntohs(local_address.sin_port));
 }
 
 int connectWithServer(struct sockaddr_in *servaddr, char *serverAddress, char *serverPort) {
@@ -109,7 +118,7 @@ void assertArgumentCount(int argc, char **argv) {
 }
 
 void printStringFromServer(char *stringFromServer) {
-    printf("%s\n", stringFromServer);
+    printf("Command received from server: %s\n", stringFromServer);
 }
 
 void handleServerInput(int sockfd, char *stringFromServer) {
@@ -124,6 +133,16 @@ void sendCommandToServer(int sockfd, struct sockaddr_in *servaddr, char *command
 
 void readCommandFromInput(char *commandFromKeyboard) {
     fgets(commandFromKeyboard, sizeof(commandFromKeyboard), stdin);
+    removeNewLineCharacterFromCommand(commandFromKeyboard);         // avoid sending an unnecessary extra char
+}
+
+void removeNewLineCharacterFromCommand(char *commandFromKeyboard) {
+    for (int i = 0; i < strlen(commandFromKeyboard); i++) {
+        if (commandFromKeyboard[i] == '\n') {
+            commandFromKeyboard[i] = '\0';
+            return;
+        }
+    }
 }
 
 #pragma clang diagnostic pop
