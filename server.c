@@ -10,6 +10,7 @@
 #define MAXDATASIZE 100
 
 #define MAXLINE 4096
+#define PORT 13182
 
 // TODO: REMOVE PRAGMA DIRECTIVES FROM MAIN
 
@@ -121,14 +122,20 @@ void readCommandFromClient(int connfd, char *recvline) {
     ssize_t n;
     printf("start readCommandFromClient\n");
 
-    while ((n = read(connfd, recvline, MAXLINE)) > 0) {
-        recvline[n] = 0;
-        // imprime o "chunk" recebido na saída padrão
-        if (fputs(recvline, stdout) == EOF) {
-            perror("fputs error");
-            exit(1);
-        }
-    }
+    n = read(connfd, recvline, MAXLINE);
+    recvline[n] = 0;
+//
+//    while ((n = read(connfd, recvline, MAXLINE)) > 0) {
+//        recvline[n] = 0;
+//        // imprime o "chunk" recebido na saída padrão
+//        if (fputs(recvline, stdout) == EOF) {
+//            printf("fputs error\n");
+//            exit(1);
+//        } else {
+//            printf("Fully received\n");
+//            break;
+//        }
+//    }
     printf("Read from client: %s\n", recvline);
 }
 
