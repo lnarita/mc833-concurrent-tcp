@@ -23,11 +23,9 @@ int connectWithServer(struct sockaddr_in *pIn, char *serverAddress, char *server
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
 
 int main(int argc, char **argv) {
-
     // verifica a quantidade de argumentos do programa
     assertArgumentCount(argc, argv);
 
-    printf("Connecting to server: %s on port %s\n", argv[1], argv[2]);
 
     for (;;) {
         char commandFromKeyboard[MAXLINE];
@@ -47,12 +45,13 @@ int main(int argc, char **argv) {
         printStringFromServer(stringFromServer);
         close(sockfd);
     }
-
-//    close(sockfd);
 }
 
 int connectWithServer(struct sockaddr_in *servaddr, char *serverAddress, char *serverPort) {
     int sockfd;
+
+    printf("Connecting to server: %s on port %s\n", serverAddress, serverPort);
+
     // cria um socket para estabeler uma conexão com o servidor
     // em caso de qualquer erro, o cliente será encerrado
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -122,7 +121,3 @@ void readCommandFromInput(char *commandFromKeyboard) {
 }
 
 #pragma clang diagnostic pop
-
-
-
-// TODO: DECIDE: open new connection everytime client sends a message <?> or keep connection alive while on program loop
