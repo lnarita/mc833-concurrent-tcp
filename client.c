@@ -29,6 +29,7 @@ int main(int argc, char **argv) {
     // verifica a quantidade de argumentos do programa
     assertArgumentCount(argc, argv);
 
+    printf("Connecting to server: %s on port %s\n", argv[1], argv[2]);
 
     for (;;) {
         // cria um socket para estabeler uma conexão com o servidor
