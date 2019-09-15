@@ -19,6 +19,8 @@ void assertArgumentCount(int argc, char **argv);
 
 int connectWithServer(struct sockaddr_in *pIn, char *serverAddress, char *serverPort);
 
+void printConnectionInfo(int sockfd);
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
 
@@ -36,7 +38,7 @@ int main(int argc, char **argv) {
 
         // socket file descriptor
         int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
-
+        printConnectionInfo(sockfd);
         sendCommandToServer(sockfd, &servaddr, commandFromKeyboard);
         printf("Command sent: %s\n", commandFromKeyboard);
 
@@ -47,10 +49,17 @@ int main(int argc, char **argv) {
     }
 }
 
+void printConnectionInfo(int sockfd) {
+    struct sockaddr_in local_address;
+    socklen_t addr_size = sizeof(local_address);
+    getsockname(sockfd, (struct sockaddr *)&local_address, &addr_size);
+    printf("Connection established using local ip %s and local port %d\n", inet_ntoa(local_address.sin_addr), (int) ntohs(local_address.sin_port));
+}
+
 int connectWithServer(struct sockaddr_in *servaddr, char *serverAddress, char *serverPort) {
     int sockfd;
 
-    printf("Connecting to server: %s on port %s\n", serverAddress, serverPort);
+    printf("Connecting to server %s on port %s\n", serverAddress, serverPort);
 
     // cria um socket para estabeler uma conexão com o servidor
     // em caso de qualquer erro, o cliente será encerrado
