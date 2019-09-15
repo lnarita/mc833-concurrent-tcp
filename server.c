@@ -110,7 +110,10 @@ void handleClientConnection(int connfd) {
 }
 
 void executeCommandFromClient(const char *command) {
+    printf("Executing command: %s", command);
+    printf("After print execute\n");
     system(command);
+    printf("Executed command: %s\n", command);
 }
 
 void sendMessageToClient(int connfd, char *message) {
@@ -120,12 +123,8 @@ void sendMessageToClient(int connfd, char *message) {
 
 void readCommandFromClient(int connfd, char *recvline) {
     ssize_t n;
-    printf("start readCommandFromClient\n");
-
     n = read(connfd, recvline, MAXLINE);
-    recvline[n] = 0;
-
-    printf("Read from client: %s\n", recvline);
+    recvline[n] = '\0';
 }
 
 // wrapper functions

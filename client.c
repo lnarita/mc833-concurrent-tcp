@@ -98,12 +98,11 @@ void handleServerInput(int sockfd, char *stringFromServer) {
 }
 
 void sendCommandToServer(int sockfd, struct sockaddr_in *servaddr, char *command) {
-    strcat(command, "\r\n");
     write(sockfd, command, strlen(command));
 }
 
 void readCommandFromInput(char *commandFromKeyboard) {
-    scanf("%s", commandFromKeyboard);
+    fgets(commandFromKeyboard, sizeof(commandFromKeyboard), stdin);
 }
 
 #pragma clang diagnostic pop
