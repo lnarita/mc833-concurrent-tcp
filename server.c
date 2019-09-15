@@ -32,9 +32,9 @@ void Listen(int i, int j);
 
 int Accept(int i, struct sockaddr *__restrict j, socklen_t *__restrict k);
 
-void handleClientConnectionOnChildProcess(int connfd, int listenfd);
+void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct sockaddr_in clientInfo);
 
-void handleClientConnection(int connfd);
+void handleClientConnection(int connfd, struct sockaddr_in clientInfo);
 
 int createListenfd();
 
@@ -46,6 +46,8 @@ void sendMessageToClient(int connfd, char *message);
 void executeCommandFromClient(const char *command);
 
 void assertArgumentCount(int argc, char **argv);
+
+void printClientInfo(struct sockaddr_in *clientInfo);
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -70,11 +72,13 @@ int main(int argc, char **argv) {
     // o servidor fica em um loop permanente, aguardando conexões que podem chegar
     // e tratando-as, respondendo-as da forma apropriada
     for (;;) {
+        struct sockaddr_in clientAddress;
+        socklen_t clientAddressLength = sizeof(clientAddress);
         // wait for client connection
-        connfd = Accept(listenfd, (struct sockaddr *) NULL, NULL);
+        connfd = Accept(listenfd, (struct sockaddr *) &clientAddress, &clientAddressLength);
 
         if (fork() == 0) {
-            handleClientConnectionOnChildProcess(connfd, listenfd);
+            handleClientConnectionOnChildProcess(connfd, listenfd, clientAddress);
         }
         close(connfd);
     }
@@ -101,9 +105,9 @@ void assertArgumentCount(int argc, char **argv) {
 
 int createListenfd() { return Socket(AF_INET, SOCK_STREAM, 0); }
 
-void handleClientConnectionOnChildProcess(int connfd, int listenfd) {
+void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct sockaddr_in clientInfo) {
     close(listenfd);
-    handleClientConnection(connfd);
+    handleClientConnection(connfd, clientInfo);
 
     // fecha a conexão com o cliente, liberando assim a porta do servidor
     // para que uma nova conexão, com um possivelmente distinto cliente,
@@ -112,8 +116,9 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd) {
     exit(0);
 }
 
-void handleClientConnection(int connfd) {
+void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
     char recvline[MAXLINE + 1];
+    printClientInfo(&clientInfo);
     readCommandFromClient(connfd, recvline);
     sendMessageToClient(connfd, recvline);
     executeCommandFromClient(recvline);
@@ -125,6 +130,10 @@ void handleClientConnection(int connfd) {
 
     // imprime na saída padrão a porta do cliente conectado
     printf("Client Port: %d\n", (int) ntohs(peer.sin_port));
+}
+
+void printClientInfo(struct sockaddr_in *clientInfo) {
+    printf("Client %s connected from his %d port\n", inet_ntoa((*clientInfo).sin_addr), (int) ntohs((*clientInfo).sin_port));
 }
 
 void executeCommandFromClient(const char *command) {
