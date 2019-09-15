@@ -114,11 +114,8 @@ void printStringFromServer(char *stringFromServer) {
 
 void handleServerInput(int sockfd, char *stringFromServer) {
     ssize_t n;
-
-    while ((n = read(sockfd, stringFromServer, MAXLINE)) > 0) {
-        stringFromServer[n] = 0;
-        // TODO HANDLE ERROR ON READ
-    }
+    n = read(sockfd, stringFromServer, MAXLINE);
+    stringFromServer[n] = '\0';
 }
 
 void sendCommandToServer(int sockfd, struct sockaddr_in *servaddr, char *command) {
