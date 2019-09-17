@@ -40,13 +40,12 @@ int main(int argc, char **argv) {
     // endereço de conexão do socket
     struct sockaddr_in servaddr;
     int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
+    printConnectionInfo(sockfd);
 
     for (;;) {
         char commandFromKeyboard[MAX_LENGTH];
         readCommandFromInput(commandFromKeyboard);
 
-
-        printConnectionInfo(sockfd);
         sendCommandToServer(sockfd, commandFromKeyboard);
         printCommandSent(commandFromKeyboard);
 
