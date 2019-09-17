@@ -54,6 +54,8 @@ void disconnectClientAndSaveInfo(struct sockaddr_in *clientInfo, char *connectTi
 
 void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char command[4097]);
 
+int isExitCommand(const char *recvline);
+
 int main(int argc, char **argv) {
     int connfd;
     struct sockaddr_in servaddr;
@@ -128,7 +130,7 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
     for (;;) {
         ssize_t bytesReadCount = readCommandFromClient(connfd, recvline);
 
-        if (strcmp(recvline, EXIT_COMMAND_MESSAGE_FROM_CLIENT) == 0 || bytesReadCount == 0) {
+        if (isExitCommand(recvline) || bytesReadCount == 0) {
             disconnectClientAndSaveInfo(&clientInfo, connectTimeStr);
             return;
         }
@@ -138,6 +140,10 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
         executeCommandFromClient(recvline, messageToClient);
         sendMessageToClient(connfd, messageToClient);
     }
+}
+
+int isExitCommand(const char *recvline) {
+    return strcmp(recvline, EXIT_COMMAND_MESSAGE_FROM_CLIENT) == 0;
 }
 
 void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char command[4097]) {
