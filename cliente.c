@@ -37,6 +37,10 @@ void finishClient(int sockfd);
 
 int isEmpty(const char *s);
 
+int isExitCommand(const char *commandFromKeyboard);
+
+int isExitCommandValue(const char *commandFromKeyboard);
+
 #define EXIT_COMMAND "exit"
 #define EXIT_COMMAND_MESSAGE_TO_SERVER "dedmorrided$"
 
@@ -53,7 +57,7 @@ int main(int argc, char **argv) {
         char commandFromKeyboard[MAX_LENGTH];
         readCommandFromInput(commandFromKeyboard);
 
-        if (strcmp(commandFromKeyboard, EXIT_COMMAND) == 0) {
+        if (isExitCommand(commandFromKeyboard) || isExitCommandValue(commandFromKeyboard)) {
             finishClient(sockfd);
             break;
         }
@@ -66,13 +70,20 @@ int main(int argc, char **argv) {
         sendCommandToServer(sockfd, commandFromKeyboard);
         printCommandSent(commandFromKeyboard);
 
-        char stringFromServer[MAX_LENGTH];
-        handleServerInput(sockfd, stringFromServer);
-        printStringFromServer(stringFromServer);
+        char serverInputDestination[MAX_LENGTH];
+        handleServerInput(sockfd, serverInputDestination);
+        printStringFromServer(serverInputDestination);
     }
 
-
     return 0;
+}
+
+int isExitCommandValue(const char *commandFromKeyboard) {
+    return strcmp(commandFromKeyboard, EXIT_COMMAND_MESSAGE_TO_SERVER) == 0;
+}
+
+int isExitCommand(const char *commandFromKeyboard) {
+    return strcmp(commandFromKeyboard, EXIT_COMMAND) == 0;
 }
 
 void finishClient(int sockfd) {
