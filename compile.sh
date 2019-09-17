@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-gcc -Wall server.c -o server
-gcc -Wall client.c -o client
+gcc -Wall servidor.c -o server
+gcc -Wall cliente.c -o client
