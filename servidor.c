@@ -158,7 +158,6 @@ void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char *command)
            command);
 }
 
-// TODO: reuse values
 void disconnectClientAndSaveInfo(struct sockaddr_in *clientInfo, char *connectTime) {
     char buffer[MAX_LENGTH];
     time_t disconnectTime;
