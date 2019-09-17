@@ -3,41 +3,38 @@
 #include <string.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-#include <time.h>
 #include <unistd.h>
 
 #define LISTENQ 10
-#define MAXDATASIZE 100
 
 #define MAXLINE 4096
 
-// TODO: REMOVE PRAGMA DIRECTIVES FROM MAIN
-
 void initializeServAddr(struct sockaddr_in *servaddr, int port);
 
-// wrapper functions (TODO: RENAME PARAMETER NAMES)
+// wrapper functions
 int Socket(int family, int type, int flags);
 
-void initializeServAddr(struct sockaddr_in *servaddr, int port) {// Escreve zeros na região de memória de servaddr
+void Bind(int sockfd, const struct sockaddr_in *addr, socklen_t addrlen);
+
+void Listen(int sockfd, int backlog);
+
+int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+// end wrapper functions
+
+void initializeServAddr(struct sockaddr_in *servaddr, int port) {
+    // Escreve zeros na região de memória de servaddr
     // de forma a "limpar" esta variável antes de utilizá-la.
     bzero(servaddr, sizeof((*servaddr)));
     (*servaddr).sin_family = AF_INET;
-    (*servaddr).sin_addr.s_addr = htonl(INADDR_ANY);       // configura o IP do servidor (IP da máquina local)
-    (*servaddr).sin_port = htons(port);                   // configura a porta na qual o servidor rodará
+    (*servaddr).sin_addr.s_addr = htonl(INADDR_ANY);        // configura o IP do servidor (IP da máquina local)
+    (*servaddr).sin_port = htons(port);                     // configura a porta na qual o servidor rodará
 }
-
-void Bind(int i, const struct sockaddr_in *a, socklen_t t);
-
-void Listen(int i, int j);
-
-int Accept(int i, struct sockaddr *__restrict j, socklen_t *__restrict k);
 
 void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct sockaddr_in clientInfo);
 
 void handleClientConnection(int connfd, struct sockaddr_in clientInfo);
 
 int createListenfd();
-
 
 void readCommandFromClient(int connfd, char *recvline);
 
@@ -48,9 +45,6 @@ void executeCommandFromClient(const char *command);
 void assertArgumentCount(int argc, char **argv);
 
 void printConnectedClientInfo(struct sockaddr_in *clientInfo);
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
 
 int main(int argc, char **argv) {
     int connfd;
@@ -74,12 +68,15 @@ int main(int argc, char **argv) {
     for (;;) {
         struct sockaddr_in clientAddress;
         socklen_t clientAddressLength = sizeof(clientAddress);
-        // wait for client connection
+
+        // aguarda a conexão de um cliente
         connfd = Accept(listenfd, (struct sockaddr *) &clientAddress, &clientAddressLength);
 
         if (fork() == 0) {
+            // no processo filho, trata a conexão do cliente
             handleClientConnectionOnChildProcess(connfd, listenfd, clientAddress);
         }
+        // fecha a conexão do processo pai
         close(connfd);
     }
 
@@ -101,17 +98,13 @@ void assertArgumentCount(int argc, char **argv) {
     }
 }
 
-#pragma clang diagnostic pop
-
 int createListenfd() { return Socket(AF_INET, SOCK_STREAM, 0); }
 
 void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct sockaddr_in clientInfo) {
     close(listenfd);
     handleClientConnection(connfd, clientInfo);
 
-    // fecha a conexão com o cliente, liberando assim a porta do servidor
-    // para que uma nova conexão, com um possivelmente distinto cliente,
-    // seja iniciada
+    // fecha a conexão com o cliente
     close(connfd);
     exit(0);
 }
@@ -143,8 +136,6 @@ void readCommandFromClient(int connfd, char *recvline) {
 }
 
 // wrapper functions
-// cria um socket para escutar conexões que chegarão a partir
-// de clientes. Caso haja um erro ao criar o socket, o servidor é finalizado.
 int Socket(int family, int type, int flags) {
     int sockfd;
     if ((sockfd = socket(family, type, flags)) < 0) {
@@ -155,23 +146,23 @@ int Socket(int family, int type, int flags) {
     return sockfd;
 }
 
-void Bind(int i, const struct sockaddr_in *a, socklen_t t) {
-    if (bind(i, (struct sockaddr *) a, t) == -1) {
+void Bind(int sockfd, const struct sockaddr_in *addr, socklen_t addrlen) {
+    if (bind(sockfd, (struct sockaddr *) addr, addrlen) == -1) {
         perror("bind");
         exit(1);
     }
 }
 
-void Listen(int i, int j) {
-    if (listen(i, j) == -1) {
+void Listen(int sockfd, int backlog) {
+    if (listen(sockfd, backlog) == -1) {
         perror("listen");
         exit(1);
     }
 }
 
-int Accept(int i, struct sockaddr *__restrict j, socklen_t *__restrict k) {
+int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
     int connfd;
-    if ((connfd = accept(i, j, k)) == -1) {
+    if ((connfd = accept(sockfd, addr, addrlen)) == -1) {
         perror("accept");
         exit(1);
     }
