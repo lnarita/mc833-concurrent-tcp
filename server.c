@@ -52,6 +52,8 @@ void printConnectedClientInfo(struct sockaddr_in *clientInfo);
 
 void disconnectClientAndSaveInfo(struct sockaddr_in *clientInfo, char *connectTime);
 
+void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char command[4097]);
+
 int main(int argc, char **argv) {
     int connfd;
     struct sockaddr_in servaddr;
@@ -131,10 +133,18 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
             return;
         }
 
+        printCommandExecutedByClient(&clientInfo, recvline);
         char messageToClient[MAX_LENGTH];
         executeCommandFromClient(recvline, messageToClient);
         sendMessageToClient(connfd, messageToClient);
     }
+}
+
+void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char command[4097]) {
+    printf("Client %s from port %d is executing command \"%s\"\n",
+           inet_ntoa((*clientInfo).sin_addr),
+           (int) ntohs((*clientInfo).sin_port),
+           command);
 }
 
 // TODO: reuse values
