@@ -8,6 +8,7 @@
 #define LISTENQ 10
 
 #define MAX_LENGTH 4096
+#define EXIT_COMMAND_MESSAGE_FROM_CLIENT "dedmorrided$"
 
 // wrapper functions
 int Socket(int family, int type, int flags);
@@ -105,8 +106,8 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct socka
     handleClientConnection(connfd, clientInfo);
 
     // fecha a conexão com o cliente
-//    close(connfd);
-//    exit(0);
+    close(connfd);
+    exit(0);
 }
 
 void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
@@ -115,6 +116,11 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
 
     for (;;) {
         readCommandFromClient(connfd, recvline);
+
+        if (strcmp(recvline, EXIT_COMMAND_MESSAGE_FROM_CLIENT) == 0) {
+            return;
+        }
+
         sendMessageToClient(connfd, recvline);
         executeCommandFromClient(recvline);
     }

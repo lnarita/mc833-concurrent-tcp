@@ -36,6 +36,7 @@ int Socket(int family, int type, int flags);
 void finishClient(int sockfd);
 
 #define EXIT_COMMAND "exit"
+#define EXIT_COMMAND_MESSAGE_TO_SERVER "dedmorrided$"
 
 int main(int argc, char **argv) {
     // verifica a quantidade de argumentos do programa
@@ -68,6 +69,7 @@ int main(int argc, char **argv) {
 }
 
 void finishClient(int sockfd) {
+    sendCommandToServer(sockfd, EXIT_COMMAND_MESSAGE_TO_SERVER);
     close(sockfd);
 }
 
