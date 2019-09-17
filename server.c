@@ -153,7 +153,7 @@ void disconnectClientAndSaveInfo(struct sockaddr_in *clientInfo, char *connectTi
     time_t disconnectTime;
     time(&disconnectTime);
 
-    snprintf(buffer, sizeof(buffer), "IP: %s | PORT: %d | CONNECT TIME: %.24s | DISCONNECT TIME: %.24s\n",
+    snprintf(buffer, sizeof(buffer), "IP: %s | PORT: %d | CONNECT TIME: %.24s | DISCONNECT TIME: %.24s",
              inet_ntoa((*clientInfo).sin_addr),
              (int) ntohs((*clientInfo).sin_port),
              connectTime,
@@ -177,7 +177,11 @@ void printConnectedClientInfo(struct sockaddr_in *clientInfo) {
 
 void executeCommandFromClient(char command[4097], char *messageToClient) {
     char commandResult[MAX_LENGTH];         // TODO CHECK MAX LENGTH;
-    FILE* filePointer = popen(command, "r");
+    char commandToBeExecuted[MAX_LENGTH];
+    strcpy(commandToBeExecuted, command);
+    strcat(commandToBeExecuted, " 2>&1");
+
+    FILE* filePointer = popen(commandToBeExecuted, "r");
     strcpy(messageToClient, "");
     while (fgets(commandResult, sizeof(commandResult), filePointer) != NULL) {
         strcat(messageToClient, commandResult);
