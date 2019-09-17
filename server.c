@@ -4,11 +4,14 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <time.h>
 
 #define LISTENQ 10
 
 #define MAX_LENGTH 4096
 #define EXIT_COMMAND_MESSAGE_FROM_CLIENT "dedmorrided$"
+
+#define LOG_FILE_NAME "connections.log"
 
 // wrapper functions
 int Socket(int family, int type, int flags);
@@ -46,6 +49,8 @@ void executeCommandFromClient(const char *command);
 void assertArgumentCount(int argc, char **argv);
 
 void printConnectedClientInfo(struct sockaddr_in *clientInfo);
+
+void saveConnectedClientInfo(struct sockaddr_in *clientInfo, char *connectTime);
 
 int main(int argc, char **argv) {
     int connfd;
@@ -113,17 +118,45 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct socka
 void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
     char recvline[MAX_LENGTH + 1];
     printConnectedClientInfo(&clientInfo);
+    time_t connectTime;
+    time(&connectTime);
+    char connectTimeStr[MAX_LENGTH];
+    strcpy(connectTimeStr, ctime(&connectTime));
 
     for (;;) {
         readCommandFromClient(connfd, recvline);
 
         if (strcmp(recvline, EXIT_COMMAND_MESSAGE_FROM_CLIENT) == 0) {
+            saveConnectedClientInfo(&clientInfo, connectTimeStr);
             return;
         }
 
         sendMessageToClient(connfd, recvline);
         executeCommandFromClient(recvline);
     }
+}
+
+void saveConnectedClientInfo(struct sockaddr_in *clientInfo, char *connectTime) {
+    char buffer[MAX_LENGTH];
+    time_t disconnectTime;
+    time(&disconnectTime);
+
+    printf("Results: %.24s | %.24s\n", connectTime, ctime(&disconnectTime));
+
+
+    snprintf(buffer, sizeof(buffer), "IP: %s | PORT: %d | CONNECT TIME: %.24s | DISCONNECT TIME: %.24s\n",
+             inet_ntoa((*clientInfo).sin_addr),
+             (int) ntohs((*clientInfo).sin_port),
+             connectTime,
+             ctime(&disconnectTime));
+
+    char command[MAX_LENGTH];
+
+    strcpy(command, "echo \"");
+    strcat(command, buffer);
+    strcat(command, "\" >> ");
+    strcat(command, LOG_FILE_NAME);
+    system(command);
 }
 
 void printConnectedClientInfo(struct sockaddr_in *clientInfo) {
