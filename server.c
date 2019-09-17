@@ -40,7 +40,7 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo);
 
 int createListenfd();
 
-void readCommandFromClient(int connfd, char *recvline);
+ssize_t readCommandFromClient(int connfd, char *recvline);
 
 void sendMessageToClient(int connfd, char *message);
 
@@ -126,9 +126,9 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
     strcpy(connectTimeStr, ctime(&connectTime));
 
     for (;;) {
-        readCommandFromClient(connfd, recvline);
+        ssize_t bytesReadCount = readCommandFromClient(connfd, recvline);
 
-        if (strcmp(recvline, EXIT_COMMAND_MESSAGE_FROM_CLIENT) == 0) {
+        if (strcmp(recvline, EXIT_COMMAND_MESSAGE_FROM_CLIENT) == 0 || bytesReadCount == 0) {
             disconnectClientAndSaveInfo(&clientInfo, connectTimeStr);
             return;
         }
@@ -193,10 +193,14 @@ void sendMessageToClient(int connfd, char *message) {
     write(connfd, message, strlen(message));
 }
 
-void readCommandFromClient(int connfd, char *recvline) {
+/**
+ * Return the amount of bytes read
+ */
+ssize_t readCommandFromClient(int connfd, char *recvline) {
     ssize_t n;
     n = read(connfd, recvline, MAX_LENGTH);
     recvline[n] = '\0';
+    return n;
 }
 
 // wrapper functions
