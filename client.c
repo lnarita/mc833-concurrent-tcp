@@ -33,6 +33,10 @@ void Connect(const struct sockaddr_in *servaddr, int sockfd);
 int Socket(int family, int type, int flags);
 // end wrapper functions
 
+void finishClient(int sockfd);
+
+#define EXIT_COMMAND "exit"
+
 int main(int argc, char **argv) {
     // verifica a quantidade de argumentos do programa
     assertArgumentCount(argc, argv);
@@ -46,6 +50,11 @@ int main(int argc, char **argv) {
         char commandFromKeyboard[MAX_LENGTH];
         readCommandFromInput(commandFromKeyboard);
 
+        if (strcmp(commandFromKeyboard, EXIT_COMMAND) == 0) {
+            finishClient(sockfd);
+            break;
+        }
+
         sendCommandToServer(sockfd, commandFromKeyboard);
         printCommandSent(commandFromKeyboard);
 
@@ -54,9 +63,12 @@ int main(int argc, char **argv) {
         printStringFromServer(stringFromServer);
     }
 
-    close(sockfd);
 
     return 0;
+}
+
+void finishClient(int sockfd) {
+    close(sockfd);
 }
 
 void printCommandSent(const char *commandFromKeyboard) {
