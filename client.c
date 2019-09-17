@@ -35,6 +35,8 @@ int Socket(int family, int type, int flags);
 
 void finishClient(int sockfd);
 
+int isEmpty(const char *s);
+
 #define EXIT_COMMAND "exit"
 #define EXIT_COMMAND_MESSAGE_TO_SERVER "dedmorrided$"
 
@@ -54,6 +56,11 @@ int main(int argc, char **argv) {
         if (strcmp(commandFromKeyboard, EXIT_COMMAND) == 0) {
             finishClient(sockfd);
             break;
+        }
+
+        // avoids sending empty commands to server
+        if (isEmpty(commandFromKeyboard)) {
+            continue;
         }
 
         sendCommandToServer(sockfd, commandFromKeyboard);
@@ -180,4 +187,18 @@ void Inet_pton(struct sockaddr_in *servaddr, const char *serverAddress) {
         perror("inet_pton error");
         exit(1);
     }
+}
+
+int isSpace(char c) {
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+}
+
+int isEmpty(const char *s) {
+    while (*s != '\0') {
+        if (!isSpace(*s)) {
+            return 0;
+        }
+        s++;
+    }
+    return 1;
 }
