@@ -105,20 +105,24 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct socka
     handleClientConnection(connfd, clientInfo);
 
     // fecha a conexão com o cliente
-    close(connfd);
-    exit(0);
+//    close(connfd);
+//    exit(0);
 }
 
 void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
     char recvline[MAX_LENGTH + 1];
     printConnectedClientInfo(&clientInfo);
-    readCommandFromClient(connfd, recvline);
-    sendMessageToClient(connfd, recvline);
-    executeCommandFromClient(recvline);
+
+    for (;;) {
+        readCommandFromClient(connfd, recvline);
+        sendMessageToClient(connfd, recvline);
+        executeCommandFromClient(recvline);
+    }
 }
 
 void printConnectedClientInfo(struct sockaddr_in *clientInfo) {
-    printf("Client %s connected from his %d port\n", inet_ntoa((*clientInfo).sin_addr), (int) ntohs((*clientInfo).sin_port));
+    printf("Client %s connected from his %d port\n", inet_ntoa((*clientInfo).sin_addr),
+           (int) ntohs((*clientInfo).sin_port));
 }
 
 void executeCommandFromClient(const char *command) {

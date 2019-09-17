@@ -26,7 +26,7 @@ void removeNewLineCharacterFromCommand(char *commandFromKeyboard);
 void printCommandSent(const char *commandFromKeyboard);
 
 // wrapper functions
-void Inet_pton(const struct sockaddr_in *servaddr, const char *serverAddress);
+void Inet_pton(struct sockaddr_in *servaddr, const char *serverAddress);
 
 void Connect(const struct sockaddr_in *servaddr, int sockfd);
 
@@ -37,14 +37,15 @@ int main(int argc, char **argv) {
     // verifica a quantidade de argumentos do programa
     assertArgumentCount(argc, argv);
 
+    // endereço de conexão do socket
+    struct sockaddr_in servaddr;
+    int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
+
     for (;;) {
         char commandFromKeyboard[MAX_LENGTH];
         readCommandFromInput(commandFromKeyboard);
 
-        // endereço de conexão do socket
-        struct sockaddr_in servaddr;
 
-        int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
         printConnectionInfo(sockfd);
         sendCommandToServer(sockfd, commandFromKeyboard);
         printCommandSent(commandFromKeyboard);
@@ -52,8 +53,9 @@ int main(int argc, char **argv) {
         char stringFromServer[MAX_LENGTH];
         handleServerInput(sockfd, stringFromServer);
         printStringFromServer(stringFromServer);
-        close(sockfd);
     }
+
+    close(sockfd);
 
     return 0;
 }
@@ -160,7 +162,7 @@ void Connect(const struct sockaddr_in *servaddr, int sockfd) {
     }
 }
 
-void Inet_pton(const struct sockaddr_in *servaddr, const char *serverAddress) {
+void Inet_pton(struct sockaddr_in *servaddr, const char *serverAddress) {
     if (inet_pton(AF_INET, serverAddress, &((*servaddr).sin_addr)) <= 0) {
         perror("inet_pton error");
         exit(1);
