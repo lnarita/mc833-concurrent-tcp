@@ -44,7 +44,7 @@ ssize_t readCommandFromClient(int connfd, char *recvline);
 
 void sendMessageToClient(int connfd, char *message);
 
-void executeCommandFromClient(char command[4097], char *messageToClient);
+void executeCommandFromClient(char *command, char *messageToClient);
 
 void assertArgumentCount(int argc, char **argv);
 
@@ -52,7 +52,7 @@ void printConnectedClientInfo(struct sockaddr_in *clientInfo);
 
 void disconnectClientAndSaveInfo(struct sockaddr_in *clientInfo, char *connectTime);
 
-void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char command[4097]);
+void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char *command);
 
 int isExitCommand(const char *recvline);
 
@@ -111,25 +111,30 @@ void assertArgumentCount(int argc, char **argv) {
 int createListenfd() { return Socket(AF_INET, SOCK_STREAM, 0); }
 
 void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct sockaddr_in clientInfo) {
-    close(listenfd);
+    close(listenfd);        // libera o socket da conexão de listen (apenas o pai deve escutar por clientes)
     handleClientConnection(connfd, clientInfo);
 
-    // fecha a conexão com o cliente
+    // fecha a conexão com o cliente, depois que o mesmo se desconectou
     close(connfd);
     exit(0);
 }
 
 void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
     char recvline[MAX_LENGTH + 1];
-    printConnectedClientInfo(&clientInfo);
     time_t connectTime;
     time(&connectTime);
     char connectTimeStr[MAX_LENGTH];
-    strcpy(connectTimeStr, ctime(&connectTime));
 
+    // obtém o horário em que o cliente se conectou ao servidor
+    strcpy(connectTimeStr, ctime(&connectTime));
+    printConnectedClientInfo(&clientInfo);
+
+    // infinitamente, enquanto o cliente está conectado
     for (;;) {
+        // lê um comando do cliente
         ssize_t bytesReadCount = readCommandFromClient(connfd, recvline);
 
+        // se foi o comando de finalização ou se não conseguiu ler nada, fecha a conexão e salva no log
         if (isExitCommand(recvline) || bytesReadCount == 0) {
             disconnectClientAndSaveInfo(&clientInfo, connectTimeStr);
             return;
@@ -138,7 +143,7 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
         printCommandExecutedByClient(&clientInfo, recvline);
         char messageToClient[MAX_LENGTH];
         executeCommandFromClient(recvline, messageToClient);
-        sendMessageToClient(connfd, messageToClient);
+        sendMessageToClient(connfd, messageToClient);       // envia o resultado do comando ao cliente
     }
 }
 
@@ -146,7 +151,7 @@ int isExitCommand(const char *recvline) {
     return strcmp(recvline, EXIT_COMMAND_MESSAGE_FROM_CLIENT) == 0;
 }
 
-void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char command[4097]) {
+void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char *command) {
     printf("Client %s from port %d is executing command \"%s\"\n",
            inet_ntoa((*clientInfo).sin_addr),
            (int) ntohs((*clientInfo).sin_port),
@@ -181,11 +186,15 @@ void printConnectedClientInfo(struct sockaddr_in *clientInfo) {
            (int) ntohs((*clientInfo).sin_port));
 }
 
-void executeCommandFromClient(char command[4097], char *messageToClient) {
-    char commandResult[MAX_LENGTH];         // TODO CHECK MAX LENGTH;
+/**
+ * Executa um comando do cliente, colocando o resultado do comando em
+ * [messageToClient]
+ */
+void executeCommandFromClient(char *command, char *messageToClient) {
+    char commandResult[MAX_LENGTH];
     char commandToBeExecuted[MAX_LENGTH];
     strcpy(commandToBeExecuted, command);
-    strcat(commandToBeExecuted, " 2>&1");
+    strcat(commandToBeExecuted, " 2>&1");       // para pegar os resultados das saídas de erro também
 
     FILE* filePointer = popen(commandToBeExecuted, "r");
     strcpy(messageToClient, "");
@@ -200,7 +209,7 @@ void sendMessageToClient(int connfd, char *message) {
 }
 
 /**
- * Return the amount of bytes read
+ * Retorna a quantidade de bytes lidos
  */
 ssize_t readCommandFromClient(int connfd, char *recvline) {
     ssize_t n;

@@ -62,17 +62,17 @@ int main(int argc, char **argv) {
             break;
         }
 
-        // avoids sending empty commands to server
+        // evita de enviar comandos vazios para o servidor
         if (isEmpty(commandFromKeyboard)) {
             continue;
         }
 
         sendCommandToServer(sockfd, commandFromKeyboard);
-        printCommandSent(commandFromKeyboard);
+        printCommandSent(commandFromKeyboard);          // imprime vomando enviado ao servidor
 
         char serverInputDestination[MAX_LENGTH];
         handleServerInput(sockfd, serverInputDestination);
-        printStringFromServer(serverInputDestination);
+        printStringFromServer(serverInputDestination);      // exibe a mensagem retornada pelo servidor
     }
 
     return 0;
@@ -163,7 +163,7 @@ void sendCommandToServer(int sockfd, char *command) {
 
 void readCommandFromInput(char *commandFromKeyboard) {
     fgets(commandFromKeyboard, MAX_LENGTH, stdin);
-    removeNewLineCharacterFromCommand(commandFromKeyboard);         // avoid sending an unnecessary extra char
+    removeNewLineCharacterFromCommand(commandFromKeyboard);         // evita de enviar um \n desnecessário
 }
 
 void removeNewLineCharacterFromCommand(char *commandFromKeyboard) {
