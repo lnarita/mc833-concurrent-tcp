@@ -44,13 +44,13 @@ void readCommandFromClient(int connfd, char *recvline);
 
 void sendMessageToClient(int connfd, char *message);
 
-void executeCommandFromClient(const char *command);
+void executeCommandFromClient(char command[4097], char *messageToClient);
 
 void assertArgumentCount(int argc, char **argv);
 
 void printConnectedClientInfo(struct sockaddr_in *clientInfo);
 
-void saveConnectedClientInfo(struct sockaddr_in *clientInfo, char *connectTime);
+void disconnectClientAndSaveInfo(struct sockaddr_in *clientInfo, char *connectTime);
 
 int main(int argc, char **argv) {
     int connfd;
@@ -127,22 +127,21 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
         readCommandFromClient(connfd, recvline);
 
         if (strcmp(recvline, EXIT_COMMAND_MESSAGE_FROM_CLIENT) == 0) {
-            saveConnectedClientInfo(&clientInfo, connectTimeStr);
+            disconnectClientAndSaveInfo(&clientInfo, connectTimeStr);
             return;
         }
 
-        sendMessageToClient(connfd, recvline);
-        executeCommandFromClient(recvline);
+        char messageToClient[MAX_LENGTH];
+        executeCommandFromClient(recvline, messageToClient);
+        sendMessageToClient(connfd, messageToClient);
     }
 }
 
-void saveConnectedClientInfo(struct sockaddr_in *clientInfo, char *connectTime) {
+// TODO: reuse values
+void disconnectClientAndSaveInfo(struct sockaddr_in *clientInfo, char *connectTime) {
     char buffer[MAX_LENGTH];
     time_t disconnectTime;
     time(&disconnectTime);
-
-    printf("Results: %.24s | %.24s\n", connectTime, ctime(&disconnectTime));
-
 
     snprintf(buffer, sizeof(buffer), "IP: %s | PORT: %d | CONNECT TIME: %.24s | DISCONNECT TIME: %.24s\n",
              inet_ntoa((*clientInfo).sin_addr),
@@ -157,6 +156,8 @@ void saveConnectedClientInfo(struct sockaddr_in *clientInfo, char *connectTime) 
     strcat(command, "\" >> ");
     strcat(command, LOG_FILE_NAME);
     system(command);
+
+    printf("Client %s from port %d disconnected\n", inet_ntoa((*clientInfo).sin_addr), (int) ntohs((*clientInfo).sin_port));
 }
 
 void printConnectedClientInfo(struct sockaddr_in *clientInfo) {
@@ -164,8 +165,14 @@ void printConnectedClientInfo(struct sockaddr_in *clientInfo) {
            (int) ntohs((*clientInfo).sin_port));
 }
 
-void executeCommandFromClient(const char *command) {
-    system(command);
+void executeCommandFromClient(char command[4097], char *messageToClient) {
+    char commandResult[MAX_LENGTH];         // TODO CHECK MAX LENGTH;
+    FILE* filePointer = popen(command, "r");
+    strcpy(messageToClient, "");
+    while (fgets(commandResult, sizeof(commandResult), filePointer) != NULL) {
+        strcat(messageToClient, commandResult);
+    }
+    pclose(filePointer);
 }
 
 void sendMessageToClient(int connfd, char *message) {

@@ -130,7 +130,7 @@ void assertArgumentCount(int argc, char **argv) {
 }
 
 void printStringFromServer(char *stringFromServer) {
-    printf("Command received from server: %s\n", stringFromServer);
+    printf("%s\n", stringFromServer);
 }
 
 void handleServerInput(int sockfd, char *stringFromServer) {
