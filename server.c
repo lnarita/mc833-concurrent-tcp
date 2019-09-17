@@ -7,9 +7,7 @@
 
 #define LISTENQ 10
 
-#define MAXLINE 4096
-
-void initializeServAddr(struct sockaddr_in *servaddr, int port);
+#define MAX_LENGTH 4096
 
 // wrapper functions
 int Socket(int family, int type, int flags);
@@ -20,6 +18,8 @@ void Listen(int sockfd, int backlog);
 
 int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 // end wrapper functions
+
+void initializeServAddr(struct sockaddr_in *servaddr, int port);
 
 void initializeServAddr(struct sockaddr_in *servaddr, int port) {
     // Escreve zeros na região de memória de servaddr
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 }
 
 void assertArgumentCount(int argc, char **argv) {
-    char error[MAXLINE + 1];
+    char error[MAX_LENGTH + 1];
     if (argc != 2) {
         // se o endereço do servidor não foi fornecido
         // exibe a forma correta de usar o programa na saída
@@ -110,7 +110,7 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct socka
 }
 
 void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
-    char recvline[MAXLINE + 1];
+    char recvline[MAX_LENGTH + 1];
     printConnectedClientInfo(&clientInfo);
     readCommandFromClient(connfd, recvline);
     sendMessageToClient(connfd, recvline);
@@ -131,7 +131,7 @@ void sendMessageToClient(int connfd, char *message) {
 
 void readCommandFromClient(int connfd, char *recvline) {
     ssize_t n;
-    n = read(connfd, recvline, MAXLINE);
+    n = read(connfd, recvline, MAX_LENGTH);
     recvline[n] = '\0';
 }
 

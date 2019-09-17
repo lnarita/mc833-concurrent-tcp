@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define MAXLINE 4096
+#define MAX_LENGTH 4096
 
 void readCommandFromInput(char *commandFromKeyboard);
 
-void sendCommandToServer(int keyboard, struct sockaddr_in *servaddr, char *command);
+void sendCommandToServer(int sockfd, char *command);
 
 void handleServerInput(int sockfd, char *stringFromServer);
 
@@ -17,7 +17,7 @@ void printStringFromServer(char *stringFromServer);
 
 void assertArgumentCount(int argc, char **argv);
 
-int connectWithServer(struct sockaddr_in *pIn, char *serverAddress, char *serverPort);
+int connectWithServer(struct sockaddr_in *servaddr, char *serverAddress, char *serverPort);
 
 void printConnectionInfo(int sockfd);
 
@@ -25,32 +25,37 @@ void removeNewLineCharacterFromCommand(char *commandFromKeyboard);
 
 void printCommandSent(const char *commandFromKeyboard);
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
+// wrapper functions
+void Inet_pton(const struct sockaddr_in *servaddr, const char *serverAddress);
+
+void Connect(const struct sockaddr_in *servaddr, int sockfd);
+
+int Socket(int family, int type, int flags);
+// end wrapper functions
 
 int main(int argc, char **argv) {
     // verifica a quantidade de argumentos do programa
     assertArgumentCount(argc, argv);
 
-
     for (;;) {
-        char commandFromKeyboard[MAXLINE];
+        char commandFromKeyboard[MAX_LENGTH];
         readCommandFromInput(commandFromKeyboard);
 
         // endereço de conexão do socket
         struct sockaddr_in servaddr;
 
-        // socket file descriptor
         int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
         printConnectionInfo(sockfd);
-        sendCommandToServer(sockfd, &servaddr, commandFromKeyboard);
+        sendCommandToServer(sockfd, commandFromKeyboard);
         printCommandSent(commandFromKeyboard);
 
-        char stringFromServer[MAXLINE];
+        char stringFromServer[MAX_LENGTH];
         handleServerInput(sockfd, stringFromServer);
         printStringFromServer(stringFromServer);
         close(sockfd);
     }
+
+    return 0;
 }
 
 void printCommandSent(const char *commandFromKeyboard) {
@@ -70,39 +75,31 @@ int connectWithServer(struct sockaddr_in *servaddr, char *serverAddress, char *s
 
     printf("Connecting to server %s on port %s\n", serverAddress, serverPort);
 
-    // cria um socket para estabeler uma conexão com o servidor
+    // cria um socket para estabelecer uma conexão com o servidor
     // em caso de qualquer erro, o cliente será encerrado
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket error");
-        exit(1);
-    }
+    sockfd = Socket(AF_INET, SOCK_STREAM, 0);
 
 
     // limpa a variável 'servaddr' antes da sua utilização,
     // escrevendo zeros na região de memória da mesma
     bzero(servaddr, sizeof(*servaddr));
+
     // usando ipv4
     (*servaddr).sin_family = AF_INET;
-    // configura a porta do servidor como sendo 13182
+    // configura a porta do servidor
     (*servaddr).sin_port = htons(atoi(serverPort));
+
     // formata / converte o endereço do servidor de string para binário
     // e atribui este valor para o campo sin_addr da variáveo servaddr
+    Inet_pton(servaddr, serverAddress);
 
-    if (inet_pton(AF_INET, serverAddress, &((*servaddr).sin_addr)) <= 0) {
-        perror("inet_pton error");
-        exit(1);
-    }
-
-    if (connect(sockfd, (struct sockaddr *) servaddr, sizeof(*servaddr)) < 0) {
-        perror("connect error");
-        exit(1);
-    }
+    Connect(servaddr, sockfd);      // conecta com o servidor
 
     return sockfd;
 }
 
 void assertArgumentCount(int argc, char **argv) {
-    char error[MAXLINE + 1];
+    char error[MAX_LENGTH + 1];
     if (argc != 3) {
         // se o endereço do servidor não foi fornecido
         // exibe a forma correta de usar o programa na saída
@@ -123,16 +120,16 @@ void printStringFromServer(char *stringFromServer) {
 
 void handleServerInput(int sockfd, char *stringFromServer) {
     ssize_t n;
-    n = read(sockfd, stringFromServer, MAXLINE);
+    n = read(sockfd, stringFromServer, MAX_LENGTH);
     stringFromServer[n] = '\0';
 }
 
-void sendCommandToServer(int sockfd, struct sockaddr_in *servaddr, char *command) {
+void sendCommandToServer(int sockfd, char *command) {
     write(sockfd, command, strlen(command));
 }
 
 void readCommandFromInput(char *commandFromKeyboard) {
-    fgets(commandFromKeyboard, MAXLINE, stdin);
+    fgets(commandFromKeyboard, MAX_LENGTH, stdin);
     removeNewLineCharacterFromCommand(commandFromKeyboard);         // avoid sending an unnecessary extra char
 }
 
@@ -145,4 +142,27 @@ void removeNewLineCharacterFromCommand(char *commandFromKeyboard) {
     }
 }
 
-#pragma clang diagnostic pop
+// wrapper functions
+int Socket(int family, int type, int flags) {
+    int sockfd;
+    if ((sockfd = socket(family, type, flags)) < 0) {
+        perror("socket");
+        exit(1);
+    }
+
+    return sockfd;
+}
+
+void Connect(const struct sockaddr_in *servaddr, int sockfd) {
+    if (connect(sockfd, (struct sockaddr *) servaddr, sizeof(*servaddr)) < 0) {
+        perror("connect error");
+        exit(1);
+    }
+}
+
+void Inet_pton(const struct sockaddr_in *servaddr, const char *serverAddress) {
+    if (inet_pton(AF_INET, serverAddress, &((*servaddr).sin_addr)) <= 0) {
+        perror("inet_pton error");
+        exit(1);
+    }
+}
