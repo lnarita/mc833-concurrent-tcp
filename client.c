@@ -132,7 +132,7 @@ void sendCommandToServer(int sockfd, struct sockaddr_in *servaddr, char *command
 }
 
 void readCommandFromInput(char *commandFromKeyboard) {
-    fgets(commandFromKeyboard, sizeof(commandFromKeyboard), stdin);
+    fgets(commandFromKeyboard, MAXLINE, stdin);
     removeNewLineCharacterFromCommand(commandFromKeyboard);         // avoid sending an unnecessary extra char
 }
 
