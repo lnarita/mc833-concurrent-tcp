@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include <time.h>
 
-#define LISTENQ 10
-
 #define MAX_LENGTH 4096
 #define EXIT_COMMAND_MESSAGE_FROM_CLIENT "dedmorrided$"
 
@@ -69,9 +67,7 @@ int main(int argc, char **argv) {
     Bind(listenfd, &servaddr, sizeof(servaddr));
 
     // permite que o processo escute no socked previamente configurados por conexões que podem chegar
-    // LISTENQ configura o número de conexões que podem ficar esperando enquanto o processo
-    // trata uma conexão particular
-    Listen(listenfd, LISTENQ);
+    Listen(listenfd, atoi(argv[2]));
 
     // o servidor fica em um loop permanente, aguardando conexões que podem chegar
     // e tratando-as, respondendo-as da forma apropriada
@@ -95,13 +91,14 @@ int main(int argc, char **argv) {
 
 void assertArgumentCount(int argc, char **argv) {
     char error[MAX_LENGTH + 1];
-    if (argc != 2) {
+    if (argc != 3) {
         // se o endereço do servidor não foi fornecido
         // exibe a forma correta de usar o programa na saída
         // padrão de erro
         strcpy(error, "uso: ");
         strcat(error, argv[0]);
-        strcat(error, "<server port>");
+        strcat(error, "<server port> ");
+        strcat(error, "<backlog>");
         perror(error);
         // finaliza a execução com um código de erro
         exit(1);
@@ -115,6 +112,7 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct socka
     handleClientConnection(connfd, clientInfo);
 
     // fecha a conexão com o cliente, depois que o mesmo se desconectou
+    sleep(3);
     close(connfd);
     exit(0);
 }
