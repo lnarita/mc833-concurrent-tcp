@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 
     // permite que o processo escute no socked previamente configurados por conexões que podem chegar
     Listen(listenfd, atoi(argv[2]));
-//    sleep(1000);
+    sleep(1000);
 
     // para tratar os sinais
     Signal(SIGCHLD, handleSigChild);
