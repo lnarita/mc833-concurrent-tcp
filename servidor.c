@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 
     // permite que o processo escute no socked previamente configurados por conexões que podem chegar
     Listen(listenfd, atoi(argv[2]));
-    sleep(1000);
+    sleep(10);
 
     // o servidor fica em um loop permanente, aguardando conexões que podem chegar
     // e tratando-as, respondendo-as da forma apropriada
