@@ -271,7 +271,6 @@ void Bind(int sockfd, const struct sockaddr_in *addr, socklen_t addrlen) {
 }
 
 void Listen(int sockfd, int backlog) {
-    printf("Listen value: %d\n", backlog);
     if (listen(sockfd, backlog) == -1) {
         perror("listen");
         exit(1);
