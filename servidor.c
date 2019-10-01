@@ -148,6 +148,7 @@ void handleClientConnectionOnChildProcess(int connfd, int listenfd, struct socka
     handleClientConnection(connfd, clientInfo);
 
     // fecha a conexão com o cliente, depois que o mesmo se desconectou
+    printf("morrendo\n");
     close(connfd);
     exit(0);
 }
