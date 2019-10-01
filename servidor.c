@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <time.h>
+#include <signal.h>
+#include <errno.h>
 
 #define MAX_LENGTH 4096
 #define EXIT_COMMAND_MESSAGE_FROM_CLIENT "dedmorrided$"
@@ -54,6 +56,35 @@ void printCommandExecutedByClient(struct sockaddr_in *clientInfo, char *command)
 
 int isExitCommand(const char *recvline);
 
+typedef void Sigfunc(int);
+
+Sigfunc *Signal(int signo, Sigfunc *func) {
+    struct sigaction act, oact;
+    act.sa_handler = func;
+    sigemptyset (&act.sa_mask);
+    act.sa_flags = 0;
+    if (signo == SIGALRM) {
+#ifdef SA_INTERRUPT
+        act.sa_flags |= SA_INTERRUPT;
+#endif
+    } else {
+#ifdef SA_RESTART
+        act.sa_flags |= SA_RESTART;
+#endif
+    }
+    if (sigaction(signo, &act, &oact) < 0) return (SIG_ERR);
+    return (oact.sa_handler);
+}
+
+void handleSigChild(int signo) {
+    pid_t pid;
+    int stat;
+    while ((pid = waitpid(-1, &stat, WNOHANG)) > 0) {
+        printf("child %d terminated \n", pid);
+    }
+}
+
+
 int main(int argc, char **argv) {
     int connfd;
     struct sockaddr_in servaddr;
@@ -72,12 +103,16 @@ int main(int argc, char **argv) {
 
     // o servidor fica em um loop permanente, aguardando conexões que podem chegar
     // e tratando-as, respondendo-as da forma apropriada
+    Signal(SIGCHLD, handleSigChild);
     for (;;) {
         struct sockaddr_in clientAddress;
         socklen_t clientAddressLength = sizeof(clientAddress);
 
         // aguarda a conexão de um cliente
         connfd = Accept(listenfd, (struct sockaddr *) &clientAddress, &clientAddressLength);
+        if (connfd == -4) {
+            continue;
+        }
 
         if (fork() == 0) {
             // no processo filho, trata a conexão do cliente
@@ -175,7 +210,8 @@ void disconnectClientAndSaveInfo(struct sockaddr_in *clientInfo, char *connectTi
     strcat(command, LOG_FILE_NAME);
     system(command);
 
-    printf("Client %s from port %d disconnected\n", inet_ntoa((*clientInfo).sin_addr), (int) ntohs((*clientInfo).sin_port));
+    printf("Client %s from port %d disconnected\n", inet_ntoa((*clientInfo).sin_addr),
+           (int) ntohs((*clientInfo).sin_port));
 }
 
 void printConnectedClientInfo(struct sockaddr_in *clientInfo) {
@@ -193,7 +229,7 @@ void executeCommandFromClient(char *command, char *messageToClient) {
     strcpy(commandToBeExecuted, command);
     strcat(commandToBeExecuted, " 2>&1");       // para pegar os resultados das saídas de erro também
 
-    FILE* filePointer = popen(commandToBeExecuted, "r");
+    FILE *filePointer = popen(commandToBeExecuted, "r");
     strcpy(messageToClient, "");
     while (fgets(commandResult, sizeof(commandResult), filePointer) != NULL) {
         strcat(messageToClient, commandResult);
@@ -244,6 +280,10 @@ void Listen(int sockfd, int backlog) {
 int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
     int connfd;
     if ((connfd = accept(sockfd, addr, addrlen)) == -1) {
+        if (errno == EINTR) {
+            return -4;
+        }
+
         perror("accept");
         exit(1);
     }
