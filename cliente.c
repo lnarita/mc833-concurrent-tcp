@@ -77,9 +77,9 @@ int main(int argc, char **argv) {
             handleServerInput(sockfd, serverInputDestination);
             int printStringFromServerReturn = printStringFromServer(serverInputDestination);      // exibe a mensagem retornada pelo servidor
 
-            if (printStringFromServerReturn == EOF) {
-                return 0;
-            }
+//            if (printStringFromServerReturn == EOF) {
+//                return 0;
+//            }
 
         } else if (FD_ISSET(fileno(stdin), &rset)) {
             // keyboard input
@@ -212,12 +212,11 @@ int readCommandFromInput(char *commandFromKeyboard) {
     fgets(readCommand, MAX_LENGTH, stdin);
 
 
-    if (readCommand[0] == '\0') {
-        return EOF;
-    }
+//    if (readCommand[0] == '\0') {
+//        return EOF;
+//    }
 
     if (feof(stdin)) {
-        printf("EOF DETECTED\n");
         return EOF;
     }
 
