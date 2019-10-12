@@ -50,10 +50,20 @@ void Select(int maxfdp1, fd_set *readset, fd_set *writeset,
 #define EXIT_COMMAND "exit"
 #define EXIT_COMMAND_MESSAGE_TO_SERVER "dedmorrided$"
 
-int charactersSent = 0;
-int charactersRead = 0;
 
-bool allInputRead = false;
+struct ConnectionState {
+    int bytesSent;
+    int bytesRead;
+    bool allInputRead;
+};
+
+/**
+ * Variable used to control amount of bytes sent or read from server and also if all stdin input
+ * has already been read. This is important to assert that client can be finished only after all
+ * file input have been read, after all read input was sent to server and after all server output
+ * have been consumed by client.
+ */
+struct ConnectionState connectionState;
 
 int main(int argc, char **argv) {
     // verifica a quantidade de argumentos do programa
@@ -63,7 +73,11 @@ int main(int argc, char **argv) {
     struct sockaddr_in servaddr;
     int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
 
-    // new things
+
+    connectionState.bytesSent = 0;
+    connectionState.bytesRead = 0;
+    connectionState.allInputRead = false;
+
     fd_set rset;
     FD_ZERO(&rset);
 
@@ -80,7 +94,7 @@ int main(int argc, char **argv) {
             handleServerInput(sockfd, serverInputDestination);
             int printStringFromServerReturn = printStringFromServer(serverInputDestination);      // exibe a mensagem retornada pelo servidor
 
-            if (printStringFromServerReturn == EOF && allInputRead) {
+            if (printStringFromServerReturn == EOF && connectionState.allInputRead) {
                 return 0;
             }
 
@@ -177,7 +191,7 @@ int printStringFromServer(char *stringFromServer) {
     fflush(stdout);
 
     // assert server sent all characters client have previously sent
-    if (charactersSent == charactersRead) {
+    if (connectionState.bytesSent == connectionState.bytesRead) {
         return EOF;
     }
 
@@ -189,12 +203,12 @@ void handleServerInput(int sockfd, char *stringFromServer) {
     n = read(sockfd, stringFromServer, MAX_LENGTH);
     stringFromServer[n] = '\0';
 
-    charactersRead += n;
+    connectionState.bytesRead += n;
 }
 
 void sendCommandToServer(int sockfd, char *command) {
     write(sockfd, command, strlen(command));
-    charactersSent += strlen(command);
+    connectionState.bytesSent += strlen(command);
 }
 
 void readCommandFromInput(char *commandFromKeyboard) {
@@ -204,7 +218,7 @@ void readCommandFromInput(char *commandFromKeyboard) {
     fgets(readCommand, MAX_LENGTH, stdin);
 
     if (feof(stdin)) {
-        allInputRead = true;
+        connectionState.allInputRead = true;
     }
 
     strcpy(commandFromKeyboard, readCommand);
