@@ -213,7 +213,7 @@ void sendMessageToClient(int connfd, char *message) {
         }
     }
 
-    printf("sending message %s to client\n", messageWithoutEndLine);
+    printf("sending message \"%s\" to client\n", messageWithoutEndLine);
     write(connfd, message, strlen(message));
 }
 

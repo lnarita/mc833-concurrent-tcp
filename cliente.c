@@ -56,7 +56,6 @@ int main(int argc, char **argv) {
     // endereço de conexão do socket
     struct sockaddr_in servaddr;
     int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
-    printConnectionInfo(sockfd);
 
     // new things
     fd_set rset;
@@ -90,7 +89,7 @@ int main(int argc, char **argv) {
             }
 
             sendCommandToServer(sockfd, commandFromKeyboard);
-//            printCommandSent(commandFromKeyboard);          // imprime vomando enviado ao servidor
+//            printCommandSent(commandFromKeyboard);          // imprime comando enviado ao servidor
         }
 
     }
@@ -126,7 +125,7 @@ void printConnectionInfo(int sockfd) {
 int connectWithServer(struct sockaddr_in *servaddr, char *serverAddress, char *serverPort) {
     int sockfd;
 
-    printf("Connecting to server %s on port %s\n", serverAddress, serverPort);
+//    printf("Connecting to server %s on port %s\n", serverAddress, serverPort);
 
     // cria um socket para estabelecer uma conexão com o servidor
     // em caso de qualquer erro, o cliente será encerrado
