@@ -278,5 +278,4 @@ int isEmpty(const char *s) {
     return 1;
 }
 
-// TODO: FIX 'exit' command
-// TODO: make client terminate itself after reading everything from server
+// TODO: FIX 'exit' command (should this be done?) 
