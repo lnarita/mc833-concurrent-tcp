@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #define MAX_LENGTH 4096
 
@@ -52,6 +53,8 @@ void Select(int maxfdp1, fd_set *readset, fd_set *writeset,
 int charactersSent = 0;
 int charactersRead = 0;
 
+bool allInputRead = false;
+
 int main(int argc, char **argv) {
     // verifica a quantidade de argumentos do programa
     assertArgumentCount(argc, argv);
@@ -77,9 +80,9 @@ int main(int argc, char **argv) {
             handleServerInput(sockfd, serverInputDestination);
             int printStringFromServerReturn = printStringFromServer(serverInputDestination);      // exibe a mensagem retornada pelo servidor
 
-//            if (printStringFromServerReturn == EOF) {
-//                return 0;
-//            }
+            if (printStringFromServerReturn == EOF && allInputRead) {
+                return 0;
+            }
 
         } else if (FD_ISSET(fileno(stdin), &rset)) {
             // keyboard input
@@ -199,6 +202,10 @@ void readCommandFromInput(char *commandFromKeyboard) {
     readCommand[0] = '\0';
 
     fgets(readCommand, MAX_LENGTH, stdin);
+
+    if (feof(stdin)) {
+        allInputRead = true;
+    }
 
     strcpy(commandFromKeyboard, readCommand);
 //    removeNewLineCharacterFromCommand(commandFromKeyboard);         // evita de enviar um \n desnecessário
