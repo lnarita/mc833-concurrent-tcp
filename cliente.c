@@ -216,9 +216,9 @@ int readCommandFromInput(char *commandFromKeyboard) {
 //        return EOF;
 //    }
 
-    if (feof(stdin)) {
-        return EOF;
-    }
+//    if (feof(stdin)) {
+//        return EOF;
+//    }
 
     strcpy(commandFromKeyboard, readCommand);
 //    removeNewLineCharacterFromCommand(commandFromKeyboard);         // evita de enviar um \n desnecessário
