@@ -141,9 +141,9 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
         }
 
         printCommandExecutedByClient(&clientInfo, recvline);
-        char messageToClient[MAX_LENGTH];
-        executeCommandFromClient(recvline, messageToClient);
-        sendMessageToClient(connfd, messageToClient);       // envia o resultado do comando ao cliente
+//        char messageToClient[MAX_LENGTH];
+//        executeCommandFromClient(recvline, messageToClient);
+        sendMessageToClient(connfd, recvline);       // envia ao cliente a linha recebida
     }
 }
 

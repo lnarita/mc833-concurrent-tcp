@@ -7,6 +7,8 @@
 
 #define MAX_LENGTH 4096
 
+#define max(X, Y) (((X) > (Y)) ? (X) : (Y))
+
 void readCommandFromInput(char *commandFromKeyboard);
 
 void sendCommandToServer(int sockfd, char *command);
@@ -41,6 +43,9 @@ int isExitCommand(const char *commandFromKeyboard);
 
 int isExitCommandValue(const char *commandFromKeyboard);
 
+void Select(int maxfdp1, fd_set *readset, fd_set *writeset,
+            fd_set *exceptset, struct timeval *timeout);
+
 #define EXIT_COMMAND "exit"
 #define EXIT_COMMAND_MESSAGE_TO_SERVER "dedmorrided$"
 
@@ -53,26 +58,41 @@ int main(int argc, char **argv) {
     int sockfd = connectWithServer(&servaddr, argv[1], argv[2]);
     printConnectionInfo(sockfd);
 
+    // new things
+    fd_set rset;
+    FD_ZERO(&rset);
+
     for (;;) {
-        char commandFromKeyboard[MAX_LENGTH];
-        readCommandFromInput(commandFromKeyboard);
+        FD_SET(fileno(stdin), &rset);       // set para keyboard
+        FD_SET(sockfd, &rset);              // set para socket
 
-        if (isExitCommand(commandFromKeyboard) || isExitCommandValue(commandFromKeyboard)) {
-            finishClient(sockfd);
-            break;
+        int maxfdp1 = max(fileno(stdin), sockfd) + 1;
+        Select(maxfdp1, &rset, NULL, NULL, NULL);
+
+        if (FD_ISSET(sockfd, &rset)) {
+            // server input
+            char serverInputDestination[MAX_LENGTH];
+            handleServerInput(sockfd, serverInputDestination);
+            printStringFromServer(serverInputDestination);      // exibe a mensagem retornada pelo servidor
+        } else if (FD_ISSET(fileno(stdin), &rset)) {
+            // keyboard input
+            char commandFromKeyboard[MAX_LENGTH];
+            readCommandFromInput(commandFromKeyboard);
+
+            if (isExitCommand(commandFromKeyboard) || isExitCommandValue(commandFromKeyboard)) {
+                finishClient(sockfd);
+                break;
+            }
+
+            // evita de enviar comandos vazios para o servidor
+            if (isEmpty(commandFromKeyboard)) {
+                continue;
+            }
+
+            sendCommandToServer(sockfd, commandFromKeyboard);
+            printCommandSent(commandFromKeyboard);          // imprime vomando enviado ao servidor
         }
 
-        // evita de enviar comandos vazios para o servidor
-        if (isEmpty(commandFromKeyboard)) {
-            continue;
-        }
-
-        sendCommandToServer(sockfd, commandFromKeyboard);
-        printCommandSent(commandFromKeyboard);          // imprime vomando enviado ao servidor
-
-        char serverInputDestination[MAX_LENGTH];
-        handleServerInput(sockfd, serverInputDestination);
-        printStringFromServer(serverInputDestination);      // exibe a mensagem retornada pelo servidor
     }
 
     return 0;
@@ -184,6 +204,11 @@ int Socket(int family, int type, int flags) {
     }
 
     return sockfd;
+}
+
+void Select(int maxfdp1, fd_set *readset, fd_set *writeset,
+            fd_set *exceptset, struct timeval *timeout) {
+    select(maxfdp1, readset, writeset, exceptset, timeout);
 }
 
 void Connect(const struct sockaddr_in *servaddr, int sockfd) {
