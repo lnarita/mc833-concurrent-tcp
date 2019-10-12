@@ -79,7 +79,9 @@ int main(int argc, char **argv) {
             int readCommandResult = readCommandFromInput(commandFromKeyboard);
 
             if (readCommandResult == EOF) {
-                return 0;       // already read all file lines
+//                printf("ENDEOF\n");
+//                return 0;       // already read all file lines
+                continue;
             }
 
             if (isExitCommand(commandFromKeyboard) || isExitCommandValue(commandFromKeyboard)) {
@@ -171,8 +173,8 @@ void assertArgumentCount(int argc, char **argv) {
 }
 
 void printStringFromServer(char *stringFromServer) {
-    printf("Printing string from server: %s", stringFromServer);
     fputs(stringFromServer, stdout);
+    fflush(stdout);
 }
 
 void handleServerInput(int sockfd, char *stringFromServer) {
