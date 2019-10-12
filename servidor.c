@@ -133,7 +133,6 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
     for (;;) {
         // lê um comando do cliente
         ssize_t bytesReadCount = readCommandFromClient(connfd, recvline);
-        printf("Command read from client: %s", recvline);
 
         // se foi o comando de finalização ou se não conseguiu ler nada, fecha a conexão e salva no log
         if (isExitCommand(recvline) || bytesReadCount == 0) {
