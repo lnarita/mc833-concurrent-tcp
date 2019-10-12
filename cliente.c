@@ -15,7 +15,7 @@ void sendCommandToServer(int sockfd, char *command);
 
 void handleServerInput(int sockfd, char *stringFromServer);
 
-void printStringFromServer(char *stringFromServer);
+int printStringFromServer(char *stringFromServer);
 
 void assertArgumentCount(int argc, char **argv);
 
@@ -49,6 +49,9 @@ void Select(int maxfdp1, fd_set *readset, fd_set *writeset,
 #define EXIT_COMMAND "exit"
 #define EXIT_COMMAND_MESSAGE_TO_SERVER "dedmorrided$"
 
+int charactersSent = 0;
+int charactersRead = 0;
+
 int main(int argc, char **argv) {
     // verifica a quantidade de argumentos do programa
     assertArgumentCount(argc, argv);
@@ -72,7 +75,12 @@ int main(int argc, char **argv) {
             // server input
             char serverInputDestination[MAX_LENGTH];
             handleServerInput(sockfd, serverInputDestination);
-            printStringFromServer(serverInputDestination);      // exibe a mensagem retornada pelo servidor
+            int printStringFromServerReturn = printStringFromServer(serverInputDestination);      // exibe a mensagem retornada pelo servidor
+
+            if (printStringFromServerReturn == EOF) {
+                return 0;
+            }
+
         } else if (FD_ISSET(fileno(stdin), &rset)) {
             // keyboard input
             char commandFromKeyboard[MAX_LENGTH];
@@ -90,9 +98,9 @@ int main(int argc, char **argv) {
             }
 
             // evita de enviar comandos vazios para o servidor
-            if (isEmpty(commandFromKeyboard)) {
-                continue;
-            }
+//            if (isEmpty(commandFromKeyboard)) {
+//                continue;
+//            }
 
             sendCommandToServer(sockfd, commandFromKeyboard);
 //            printCommandSent(commandFromKeyboard);          // imprime comando enviado ao servidor
@@ -172,19 +180,29 @@ void assertArgumentCount(int argc, char **argv) {
     }
 }
 
-void printStringFromServer(char *stringFromServer) {
+int printStringFromServer(char *stringFromServer) {
     fputs(stringFromServer, stdout);
     fflush(stdout);
+
+    // assert server sent all characters client have previously sent
+    if (charactersSent == charactersRead) {
+        return EOF;
+    }
+
+    return 0;
 }
 
 void handleServerInput(int sockfd, char *stringFromServer) {
     ssize_t n;
     n = read(sockfd, stringFromServer, MAX_LENGTH);
     stringFromServer[n] = '\0';
+
+    charactersRead += n;
 }
 
 void sendCommandToServer(int sockfd, char *command) {
     write(sockfd, command, strlen(command));
+    charactersSent += strlen(command);
 }
 
 int readCommandFromInput(char *commandFromKeyboard) {
@@ -193,7 +211,13 @@ int readCommandFromInput(char *commandFromKeyboard) {
 
     fgets(readCommand, MAX_LENGTH, stdin);
 
+
     if (readCommand[0] == '\0') {
+        return EOF;
+    }
+
+    if (feof(stdin)) {
+        printf("EOF DETECTED\n");
         return EOF;
     }
 
@@ -256,3 +280,4 @@ int isEmpty(const char *s) {
 }
 
 // TODO: FIX 'exit' command
+// TODO: make client terminate itself after reading everything from server

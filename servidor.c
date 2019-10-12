@@ -204,15 +204,6 @@ void executeCommandFromClient(char *command, char *messageToClient) {
 }
 
 void sendMessageToClient(int connfd, char *message) {
-    char messageWithoutEndLine[MAX_LENGTH];
-    strcpy(messageWithoutEndLine, message);
-    for (int i = 0; i < MAX_LENGTH; i++) {
-        if (messageWithoutEndLine[i] == '\n') {
-            messageWithoutEndLine[i] = '\0';
-            break;
-        }
-    }
-
     printf("sending message to client -> %s", message);
     write(connfd, message, strlen(message));
 }
