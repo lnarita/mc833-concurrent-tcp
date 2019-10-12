@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
             }
 
             sendCommandToServer(sockfd, commandFromKeyboard);
-            printCommandSent(commandFromKeyboard);          // imprime vomando enviado ao servidor
+//            printCommandSent(commandFromKeyboard);          // imprime vomando enviado ao servidor
         }
 
     }
@@ -168,7 +168,7 @@ void assertArgumentCount(int argc, char **argv) {
 }
 
 void printStringFromServer(char *stringFromServer) {
-    printf("%s", stringFromServer);
+    fputs(stringFromServer, stdout);
 }
 
 void handleServerInput(int sockfd, char *stringFromServer) {
@@ -183,7 +183,7 @@ void sendCommandToServer(int sockfd, char *command) {
 
 void readCommandFromInput(char *commandFromKeyboard) {
     fgets(commandFromKeyboard, MAX_LENGTH, stdin);
-    removeNewLineCharacterFromCommand(commandFromKeyboard);         // evita de enviar um \n desnecessário
+//    removeNewLineCharacterFromCommand(commandFromKeyboard);         // evita de enviar um \n desnecessário
 }
 
 void removeNewLineCharacterFromCommand(char *commandFromKeyboard) {
@@ -238,3 +238,5 @@ int isEmpty(const char *s) {
     }
     return 1;
 }
+
+// TODO: FIX 'exit' command

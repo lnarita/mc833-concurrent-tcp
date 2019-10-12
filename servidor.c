@@ -140,7 +140,7 @@ void handleClientConnection(int connfd, struct sockaddr_in clientInfo) {
             return;
         }
 
-        printCommandExecutedByClient(&clientInfo, recvline);
+//        printCommandExecutedByClient(&clientInfo, recvline);
 //        char messageToClient[MAX_LENGTH];
 //        executeCommandFromClient(recvline, messageToClient);
         sendMessageToClient(connfd, recvline);       // envia ao cliente a linha recebida
@@ -204,6 +204,16 @@ void executeCommandFromClient(char *command, char *messageToClient) {
 }
 
 void sendMessageToClient(int connfd, char *message) {
+    char messageWithoutEndLine[MAX_LENGTH];
+    strcpy(messageWithoutEndLine, message);
+    for (int i = 0; i < MAX_LENGTH; i++) {
+        if (messageWithoutEndLine[i] == '\n') {
+            messageWithoutEndLine[i] = '\0';
+            break;
+        }
+    }
+
+    printf("sending message %s to client\n", messageWithoutEndLine);
     write(connfd, message, strlen(message));
 }
 
