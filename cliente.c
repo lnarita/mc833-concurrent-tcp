@@ -9,7 +9,7 @@
 
 #define max(X, Y) (((X) > (Y)) ? (X) : (Y))
 
-int readCommandFromInput(char *commandFromKeyboard);
+void readCommandFromInput(char *commandFromKeyboard);
 
 void sendCommandToServer(int sockfd, char *command);
 
@@ -84,23 +84,12 @@ int main(int argc, char **argv) {
         } else if (FD_ISSET(fileno(stdin), &rset)) {
             // keyboard input
             char commandFromKeyboard[MAX_LENGTH];
-            int readCommandResult = readCommandFromInput(commandFromKeyboard);
-
-            if (readCommandResult == EOF) {
-//                printf("ENDEOF\n");
-//                return 0;       // already read all file lines
-                continue;
-            }
+            readCommandFromInput(commandFromKeyboard);
 
             if (isExitCommand(commandFromKeyboard) || isExitCommandValue(commandFromKeyboard)) {
                 finishClient(sockfd);
                 break;
             }
-
-            // evita de enviar comandos vazios para o servidor
-//            if (isEmpty(commandFromKeyboard)) {
-//                continue;
-//            }
 
             sendCommandToServer(sockfd, commandFromKeyboard);
 //            printCommandSent(commandFromKeyboard);          // imprime comando enviado ao servidor
@@ -205,24 +194,14 @@ void sendCommandToServer(int sockfd, char *command) {
     charactersSent += strlen(command);
 }
 
-int readCommandFromInput(char *commandFromKeyboard) {
+void readCommandFromInput(char *commandFromKeyboard) {
     char readCommand[MAX_LENGTH];
     readCommand[0] = '\0';
 
     fgets(readCommand, MAX_LENGTH, stdin);
 
-
-//    if (readCommand[0] == '\0') {
-//        return EOF;
-//    }
-
-//    if (feof(stdin)) {
-//        return EOF;
-//    }
-
     strcpy(commandFromKeyboard, readCommand);
 //    removeNewLineCharacterFromCommand(commandFromKeyboard);         // evita de enviar um \n desnecessário
-    return 0;
 }
 
 void removeNewLineCharacterFromCommand(char *commandFromKeyboard) {
